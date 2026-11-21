@@ -786,7 +786,7 @@ class Engine:
             (since, limit),
         )
 
-    def presence_grid(self, hours: int = 24, limit: int = 40) -> list[dict]:
+    def presence_grid(self, hours: int = 24, limit: int = 40) -> tuple[list[dict], list[str]]:
         """Return per-device hourly cell data for heat rows."""
         since = (utcnow() - timedelta(hours=hours)).strftime("%Y-%m-%d %H")
         rows = self.db.q(
@@ -811,7 +811,7 @@ class Engine:
         )[:limit]
         for entry in ordered:
             entry["series"] = [entry["cells"].get(bucket, -1) for bucket in buckets]
-        return ordered, buckets  # type: ignore[return-value]
+        return ordered, buckets
 
     def sessions_for(self, mac: str, limit: int = 100) -> list[dict]:
         """Return sessions for a device."""
@@ -983,6 +983,9 @@ class Engine:
         target = (target or "").strip()
         if not target:
             raise ValueError("target is required")
+        # A leading dash would be read as a command-line option by the tool.
+        if target.startswith("-"):
+            raise ValueError("target must not start with '-'")
         if tool in {"nmap", "ping", "traceroute"} and not is_ip(target) and "/" not in target:
             raise ValueError("target must be an IP address or CIDR")
         if tool == "nmap":

@@ -9,7 +9,7 @@ from textual.widgets import Button, DataTable, Input, Select, Static
 
 from ..modals import NewDeviceModal
 from ..widgets import safe
-from .base import BaseView, status_cell
+from .base import BaseView, restore_table_cursor, status_cell, table_cursor_key
 
 STATUS_OPTIONS = [
     ("All active devices", "active"),
@@ -89,6 +89,7 @@ class DevicesView(BaseView):
         )
 
         table = self.query_one("#device-table", DataTable)
+        selected = table_cursor_key(table)
         table.clear(columns=True)
         show_macs = self.engine.settings.get_bool("show_macs")
         compact = self.app.size.width < 138
@@ -127,6 +128,7 @@ class DevicesView(BaseView):
                 ]
             )
             table.add_row(*cells, key=str(device["mac"]))
+        restore_table_cursor(table, selected)
 
     def on_input_changed(self, event: Input.Changed) -> None:
         """Debounce search input updates."""

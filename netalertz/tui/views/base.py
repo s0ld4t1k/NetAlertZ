@@ -20,6 +20,28 @@ def panel(title: str, note: str = "", classes: str = "") -> ComposeResult:
     yield Static(markup, classes=f"panel-title {classes}".strip())
 
 
+def table_cursor_key(table) -> str | None:
+    """Return the row key under the cursor of a DataTable, if any."""
+    if table.row_count == 0:
+        return None
+    try:
+        key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value
+    except Exception:
+        return None
+    return None if key is None else str(key)
+
+
+def restore_table_cursor(table, key: str | None) -> None:
+    """Move the cursor back onto a row key after the table was rebuilt."""
+    if not key:
+        return
+    try:
+        table.move_cursor(row=table.get_row_index(key))
+    except Exception:
+        # The row disappeared; keep the default cursor position.
+        pass
+
+
 def status_cell(device: dict, label: bool = True) -> Text:
     """Render a coloured status value for tables."""
     status = str(device.get("status") or "offline")

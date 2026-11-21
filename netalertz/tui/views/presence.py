@@ -10,7 +10,7 @@ from textual.containers import Horizontal
 from textual.widgets import Button, DataTable, Static
 
 from ..widgets import StatCard, safe
-from .base import BaseView
+from .base import BaseView, restore_table_cursor, table_cursor_key
 
 
 def _hour_label(bucket: str) -> str:
@@ -80,6 +80,7 @@ class PresenceView(BaseView):
         grid, buckets = self.engine.presence_grid(hours=24, limit=200)
         buckets = buckets[-24:]
         table = self.query_one("#presence-table", DataTable)
+        selected = table_cursor_key(table)
         table.cell_padding = 0
         table.clear(columns=True)
         table.add_column("Device", width=17)
@@ -111,6 +112,7 @@ class PresenceView(BaseView):
                 *rows,
                 key=str(entry["mac"]),
             )
+        restore_table_cursor(table, selected)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle toolbar actions."""
