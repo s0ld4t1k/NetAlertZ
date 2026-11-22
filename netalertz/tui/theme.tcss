@@ -338,6 +338,15 @@ DataTable > .datatable--hover {
     margin-bottom: 0;
 }
 
+/* Very narrow terminals: drop the clock and tighten the metadata block. */
+#app-shell.micro #top-clock-block {
+    display: none;
+}
+
+#app-shell.micro #top-meta {
+    width: 26;
+}
+
 #app-shell.tiny Sidebar {
     width: 6;
     padding: 0;
@@ -785,7 +794,8 @@ TabPane {
 
 /* ------------------------------------------------------------------- footer */
 FooterBar {
-    height: 1;
+    /* 1 line for the top border + 1 line for the hints/meta children. */
+    height: 2;
     background: $panel;
     border-top: solid $primary 20%;
     padding: 0 1;

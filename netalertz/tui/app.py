@@ -72,7 +72,9 @@ class NetAlertZApp(App):
         self.current_view = "dashboard"
         self._scanning_since: float | None = None
         self._last_event_refresh = 0.0
-        self._resize_timer = None
+        # NB: App itself uses ``_resize_timer`` for its layout reflow. Never
+        # reuse that name here, or the screen stops resizing with the terminal.
+        self._resize_refresh_timer = None
 
     def compose(self) -> ComposeResult:
         """Compose the persistent application shell."""
@@ -125,6 +127,8 @@ class NetAlertZApp(App):
         shell.set_class(height < 40, "short")
         tiny = width < 110
         shell.set_class(tiny, "tiny")
+        micro = width < 76
+        shell.set_class(micro, "micro")
         for item in self.query(NavItem):
             item.set_compact(tiny)
 
@@ -135,9 +139,9 @@ class NetAlertZApp(App):
             self._apply_layout(size.width, size.height)
         else:
             self._apply_layout()
-        if self._resize_timer is not None:
-            self._resize_timer.stop()
-        self._resize_timer = self.set_timer(0.25, self.refresh_current)
+        if self._resize_refresh_timer is not None:
+            self._resize_refresh_timer.stop()
+        self._resize_refresh_timer = self.set_timer(0.25, self.refresh_current)
 
     def on_unmount(self) -> None:
         """Stop the background scheduler when the app exits."""

@@ -137,7 +137,9 @@ class DashboardView(BaseView):
             ]
             if not narrow:
                 cells.insert(1, event_text(str(event.get("type") or "")))
-            events.add_row(*cells, key=f"event-{event.get('mac') or event.get('id')}")
+            events.add_row(
+                *cells, key=f"event-{event.get('id') or event.get('mac') or 'event'}"
+            )
 
         attention = self.query_one("#attention-table", DataTable)
         attention.clear(columns=True)
@@ -147,12 +149,27 @@ class DashboardView(BaseView):
         else:
             for label, width in (("State", 9), ("Device", 13), ("Detail", 12)):
                 attention.add_column(label, width=width)
-        rows = (
+        # A device can match several buckets (e.g. new AND offline), so merge
+        # them while keeping the most urgent status per MAC and avoiding
+        # duplicate row keys.
+        rank = {"down": 0, "new": 1, "offline": 2}
+        merged: dict[str, dict] = {}
+        for row in (
             self.engine.list_devices(status="down", limit=20)
             + self.engine.list_devices(status="new", limit=20)
             + self.engine.list_devices(status="offline", limit=20)
+        ):
+            key = str(row.get("mac") or "")
+            if not key:
+                continue
+            current = merged.get(key)
+            if current is None or rank.get(row.get("status", ""), 3) < rank.get(
+                current.get("status", ""), 3
+            ):
+                merged[key] = row
+        rows = sorted(
+            merged.values(), key=lambda row: rank.get(row.get("status", ""), 3)
         )
-        rows.sort(key=lambda row: {"down": 0, "new": 1, "offline": 2}.get(row.get("status", ""), 3))
         for device in rows[:8]:
             detail = device.get("ip") or device.get("mac") or ""
             if device.get("status") == "down":
@@ -163,7 +180,7 @@ class DashboardView(BaseView):
                 status_cell(device),
                 safe(device.get("name") or device.get("mac")),
                 safe(detail),
-                key=str(device["mac"]),
+                key=str(device.get("mac")),
             )
         if not rows:
             attention.add_row(
